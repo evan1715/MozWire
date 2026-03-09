@@ -1,6 +1,6 @@
 use crate::{
     constants::EXPLOITATION_ATTEMPT_MESSAGE,
-    relay::{exploitation_attempt, PublicKey},
+    relay::{PublicKey, exploitation_attempt},
 };
 use serde::de;
 use std::fmt;

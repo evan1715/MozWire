@@ -8,7 +8,7 @@ license = "GPL-3.0-or-later"
 repository = "https://github.com/NilsIrl/MozWire/"
 readme = "README.md"
 version = "0.8.1"
-edition = "2021"
+edition = "2024"
 
 [profile.release]
 lto = true
@@ -17,14 +17,14 @@ strip = "symbols"
 
 [dependencies]
 base64 = "0.22.1"
-clap = { version = "4.5.23", features = ["color", "derive", "env", "wrap_help"] }
-percent-encoding = "2.1.0"
+clap = { version = "4.5.60", features = ["color", "derive", "env", "wrap_help"] }
+percent-encoding = "2.3.2"
 rand = "0.8.5"
-regex = "1.5.6"
-reqwest = { version = "0.12.9", default-features = false, features = ["rustls-tls", "blocking", "json"] }
-serde = { version = "1.0.137", features = ["derive"] }
-sha2 = "0.10.2"
+regex = "1.12.3"
+reqwest = { version = "0.13.2", default-features = false, features = ["default-tls", "blocking", "json"] }
+serde = { version = "1.0.228", features = ["derive"] }
+sha2 = "0.10.9"
 sys-info = "0.9.1"
 tiny_http = "0.12.0"
-webbrowser = "1.0.3"
+webbrowser = "1.1.0"
 x25519-dalek = { version = "2.0.1", features = ["static_secrets"] }

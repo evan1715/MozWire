@@ -41,8 +41,9 @@ pub(crate) enum Commands {
     },
 }
 
-#[derive(ValueEnum, Clone)]
+#[derive(ValueEnum, Clone, Default)]
 pub(crate) enum Tunnel {
+    #[default]
     Both,
     Ipv4,
     Ipv6,
@@ -62,12 +63,6 @@ impl FromStr for Port {
             "random" => Ok(Self::Random),
             port => Ok(Self::Port(port.parse()?)),
         }
-    }
-}
-
-impl Default for Tunnel {
-    fn default() -> Self {
-        Self::Both
     }
 }
 

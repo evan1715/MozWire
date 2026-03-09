@@ -145,20 +145,20 @@ fn main() {
             let code;
             let code_url_regex = regex::Regex::new(r"\A/\?code=([0-9a-f]{80})\z").unwrap();
             for request in server.incoming_requests() {
-                if *request.method() == Method::Get {
-                    if let Some(caps) = code_url_regex.captures(request.url()) {
-                        code = caps.get(1).unwrap();
-                        return client
-                            .post(format!("{}{}/vpn/login/verify", BASE_URL, V2_API))
-                            .json(&AccessTokenRequest {
-                                code: code.as_str(),
-                                code_verifier: std::str::from_utf8(&code_verifier).unwrap(),
-                            })
-                            .send()
-                            .unwrap()
-                            .json()
-                            .unwrap();
-                    }
+                if *request.method() == Method::Get
+                    && let Some(caps) = code_url_regex.captures(request.url())
+                {
+                    code = caps.get(1).unwrap();
+                    return client
+                        .post(format!("{}{}/vpn/login/verify", BASE_URL, V2_API))
+                        .json(&AccessTokenRequest {
+                            code: code.as_str(),
+                            code_verifier: std::str::from_utf8(&code_verifier).unwrap(),
+                        })
+                        .send()
+                        .unwrap()
+                        .json()
+                        .unwrap();
                 }
             }
             unreachable!("Server closed without receiving code")
