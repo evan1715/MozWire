@@ -5,10 +5,9 @@ pub const BASE_URL: &str = "https://vpn.mozilla.org";
 pub const V1_API: &str = "/api/v1";
 pub const V2_API: &str = "/api/v2";
 pub const IPV4_GATEWAY: Ipv4Addr = Ipv4Addr::new(10, 64, 0, 1);
-pub const PORT_RANGES: [(u16, u16); 6] = [
+pub const PORT_RANGES: [(u16, u16); 5] = [
     (53, 53),
     (123, 123),
-    (443, 443),
     (4000, 33433),
     (33565, 51820),
     (52001, 60000),
