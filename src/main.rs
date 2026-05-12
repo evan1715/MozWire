@@ -44,6 +44,10 @@ use base64::Engine;
 use clap::Parser;
 use core::num::NonZeroUsize;
 use rand::seq::IteratorRandom;
+// rand_core 0.6 is used explicitly for the crypto path because x25519-dalek
+// 2.x depends on rand_core 0.6 while rand 0.9 uses rand_core 0.9; the two
+// versions are distinct crates and their OsRng/RngCore types are incompatible.
+use rand_core::{OsRng, RngCore};
 use tiny_http::ListenAddr;
 
 mod cli;
@@ -222,7 +226,8 @@ fn main() {
     let login = matches.token.as_ref().map_or_else(
         || {
             // ── Browser-based PKCE login flow ──────────────────────────────
-            use rand::RngCore;
+            // RngCore and OsRng are imported at the top of the file from
+            // rand_core 0.6 so they are compatible with x25519-dalek 2.x.
             use sha2::Digest;
 
             // Step 1: Generate a cryptographically random 32-byte code verifier,
@@ -230,8 +235,9 @@ fn main() {
             // RFC 7636 requires the verifier to be between 43 and 128 characters
             // of unreserved URL characters; base64url with 32 random bytes gives
             // exactly 43 characters that satisfy this requirement.
+            // OsRng comes from rand_core 0.6 (compatible with x25519-dalek 2.x).
             let mut code_verifier_random = [0u8; 32];
-            rand::rngs::OsRng.fill_bytes(&mut code_verifier_random);
+            OsRng.fill_bytes(&mut code_verifier_random);
             let mut code_verifier = [0u8; 43]; // base64url of 32 bytes = 43 chars
             base64::prelude::BASE64_URL_SAFE_NO_PAD
                 .encode_slice(code_verifier_random, &mut code_verifier)
@@ -329,7 +335,8 @@ fn main() {
         println!("{}", login.token);
     }
 
-    let mut rng = rand::thread_rng();
+    // rand::rng() is the rand 0.9 replacement for the deprecated thread_rng().
+    let mut rng = rand::rng();
 
     match matches.command {
         // ── device subcommand ──────────────────────────────────────────────
@@ -429,8 +436,10 @@ fn main() {
                 // CSPRNG (OsRng), which is appropriate for key material.
                 let (pubkey_base64, privkey_base64) = privkey.map_or_else(
                     || {
+                        // OsRng is rand_core 0.6's implementation, which satisfies
+                        // x25519-dalek 2.x's RngCore + CryptoRng (0.6) bounds.
                         let privkey =
-                            x25519_dalek::StaticSecret::random_from_rng(rand::rngs::OsRng);
+                            x25519_dalek::StaticSecret::random_from_rng(OsRng);
                         let privkey_base64 =
                             base64::prelude::BASE64_STANDARD.encode(privkey.to_bytes());
                         (
