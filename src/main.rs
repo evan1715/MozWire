@@ -396,6 +396,7 @@ PreDown = iptables -D OUTPUT ! -o %i -m mark ! --mark $(wg show %i fwmark) -m ad
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn test_private_to_public_key() {
         assert_eq!(
@@ -406,20 +407,90 @@ mod tests {
             private_to_public_key("wD4tAq9edXWCILzf8uO7qgsOs/2gTUTvcGMhUdwS6E8=").unwrap(),
             "wv6lbcAK1L+IYJk8SgpRLgFED7/pggu8uvi8Li7OjH4="
         );
-
         assert_eq!(
             private_to_public_key("4AaD2YkoQ+c2ccL/fnjTmTeRdiZVhvXhiL4gApeePG4=").unwrap(),
             "idTXEeR5rjxYMgQpwbLP+2qYEYR5KinvDqfZpFg7HTo="
         );
-
         assert_eq!(
             private_to_public_key("iBr/jbjbij/w3BpvTvkB6r1zQvMpIx5mc1C/qnuzpnU=").unwrap(),
             "gxi5un691rLWUD4HSXM0gU4OpHt4r+yVlQ/jfDYJIR8="
         );
-
         assert_eq!(
             private_to_public_key("kCJuJAX+EWZ23tPK1b+Szl+m89TYxLh9ilIn+gDzZnc=").unwrap(),
             "nT4fmyCGntbuIetTOndAAF/b02p5GGj3MkOSb1wF1zY="
+        );
+    }
+
+    #[test]
+    fn test_private_to_public_key_invalid_base64() {
+        assert!(private_to_public_key("not-valid-base64!!!").is_err());
+        assert!(private_to_public_key("tooshort=").is_err());
+    }
+
+    #[test]
+    fn test_private_to_public_key_deterministic() {
+        // Same private key must always produce the same public key.
+        let privkey = "OO9fkBohqv0mnmogkonAXBAvurjfy/DYXcpI1Yt7pEo=";
+        let pub1 = private_to_public_key(privkey).unwrap();
+        let pub2 = private_to_public_key(privkey).unwrap();
+        assert_eq!(pub1, pub2);
+    }
+
+    #[test]
+    fn test_login_deserialization() {
+        let json = r#"{
+            "token": "test_token_abc123",
+            "user": {
+                "devices": [
+                    {
+                        "name": "my-device",
+                        "pubkey": "GC7dBMKmrQ3EBOrUHr3QYJR2gW3jDIuVEo/0p//WTEE=",
+                        "ipv4_address": "10.68.52.100/32",
+                        "ipv6_address": "fc00:bbbb:bbbb:bb01::4:6400/128"
+                    }
+                ]
+            }
+        }"#;
+        let login: Login = serde_json::from_str(json).unwrap();
+        assert_eq!(login.token, "test_token_abc123");
+        assert_eq!(login.user.devices.len(), 1);
+        assert_eq!(login.user.devices[0].name, "my-device");
+    }
+
+    #[test]
+    fn test_error_deserialization() {
+        let json = r#"{"errno": 120, "error": "invalid token"}"#;
+        let err: Error = serde_json::from_str(json).unwrap();
+        assert_eq!(err.errno, 120);
+        assert_eq!(err.error, "invalid token");
+    }
+
+    #[test]
+    fn test_new_device_serialization() {
+        let device = NewDevice {
+            name: "test-device",
+            pubkey: "GC7dBMKmrQ3EBOrUHr3QYJR2gW3jDIuVEo/0p//WTEE=",
+        };
+        let json = serde_json::to_string(&device).unwrap();
+        assert!(json.contains("test-device"));
+        assert!(json.contains("GC7dBMKmrQ3EBOrUHr3QYJR2gW3jDIuVEo/0p//WTEE="));
+    }
+
+    #[test]
+    fn test_port_in_allowed_range() {
+        use crate::constants::PORT_RANGES;
+        // All range boundaries should be considered valid.
+        for &(start, end) in &PORT_RANGES {
+            let in_start = PORT_RANGES.iter().any(|&(s, e)| start >= s && start <= e);
+            let in_end = PORT_RANGES.iter().any(|&(s, e)| end >= s && end <= e);
+            assert!(in_start, "range start {start} not in any PORT_RANGES");
+            assert!(in_end, "range end {end} not in any PORT_RANGES");
+        }
+        // Port 51820 (default WireGuard port) must be valid.
+        let port: u16 = 51820;
+        assert!(
+            PORT_RANGES.iter().any(|&(s, e)| port >= s && port <= e),
+            "default port 51820 not in PORT_RANGES"
         );
     }
 }

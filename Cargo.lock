@@ -782,6 +782,7 @@ dependencies = [
  "regex",
  "reqwest",
  "serde",
+ "serde_json",
  "sha2",
  "sys-info",
  "tiny_http",
